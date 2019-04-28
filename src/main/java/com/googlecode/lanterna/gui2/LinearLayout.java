@@ -422,7 +422,7 @@ public class LinearLayout implements LayoutManager {
 
             TerminalSize decidedSize = fittingMap.get(component);
             TerminalPosition position = component.getPosition();
-            position = position.withRow(topPosition);
+            position = position.withColumn(topPosition);
             switch(alignment) {
                 case End:
                     position = position.withColumn(availableHorizontalSpace - decidedSize.getColumns());
@@ -432,12 +432,12 @@ public class LinearLayout implements LayoutManager {
                     break;
                 case Beginning:
                 default:
-                    position = position.withColumn(0);
+                    //position = position.withColumn(0);
                     break;
             }
             component.setPosition(component.getPosition().with(position));
             component.setSize(component.getSize().with(decidedSize));
-            topPosition += decidedSize.getRows() + spacing;
+            topPosition += decidedSize.getColumns() + spacing;
         }
     }
 }

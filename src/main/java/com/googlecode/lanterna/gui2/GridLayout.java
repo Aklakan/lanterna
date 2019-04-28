@@ -18,10 +18,20 @@
  */
 package com.googlecode.lanterna.gui2;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TreeSet;
+
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
-
-import java.util.*;
 
 /**
  * This emulates the behaviour of the GridLayout in SWT (as opposed to the one in AWT/Swing). I originally ported the
@@ -679,7 +689,114 @@ public class GridLayout implements LayoutManager {
         return totalWidth;
     }
 
-    private int shrinkHeightToFitArea(TerminalSize area, int[] rowHeights) {
+    
+    /**
+     * New strategy: Equally distribute the space - if a component occupies less space,
+     * distribute the remaining space as well
+     * 
+     * Note: We could distribute the available space based on weights as well
+     * When distributing the remaining rows, those components with the largest fractions
+     * should be prioritized.
+     * 
+     * @param area
+     * @param rowHeights
+     * @return
+     */
+    public int shrinkHeightToFitArea(TerminalSize area, int[] rowHeights) {
+        int totalHeight = 0;
+        for(int height: rowHeights) {
+            totalHeight += height;
+        }
+
+        int availableRows = area.getRows();
+        int remainingHeights = availableRows;
+
+        int l = rowHeights.length;
+        Set<Integer> open = new LinkedHashSet<Integer>();
+        for(int i = 0; i < l; ++i) {
+        	open.add(i);
+        }
+        //Map<Integer, Integer> rowToHeight = new HashMap<Integer, Integer>();
+        int[] currentHeights = new int[l];
+        Arrays.fill(currentHeights, 0);
+
+        while(!open.isEmpty()) {
+        	// Distribute the remaining rows among the open ones
+        	l = open.size();
+        	
+            int share = remainingHeights / l;
+            //int remainder = remainingHeights % l;
+
+            for(Iterator<Integer> it = open.iterator(); it.hasNext();) {
+	        	int i = it.next();
+            	int max = rowHeights[i];
+	        	int now = currentHeights[i];
+	        	int eligible = now + share;
+	        	if(max <= eligible) {
+	        		currentHeights[i] = max;
+	        		int usedHeights = max - now;
+	        		//int unusedHeights = eligible - max;
+	        		//remainder += unusedHeights;
+	        		remainingHeights -= usedHeights;
+//	        		remainingRows += delta;
+	        		it.remove();
+	        	} else {
+	        		currentHeights[i] = eligible;
+	        		remainingHeights -= share;
+	        	}
+	        }
+            
+            
+            // If the remainder is greater than the open components, we can give away
+            // for shares of rows again
+            if(!open.isEmpty() && remainingHeights >= open.size()) {
+            	//remainingHeights += remainder;
+            	continue;
+            } else {
+            	// Distribute the remaining rows among the open components
+            	for(int i : open) {
+            		if(remainingHeights <= 0) {
+            			break;
+            		}
+
+            		++currentHeights[i];
+            		--remainingHeights;
+            		//--remainder;     		
+            	}
+            	
+            	break;
+            }
+        }
+        
+        
+        int result = 0;
+        for(int height: currentHeights) {
+        	result += height;
+        }
+
+        System.arraycopy(currentHeights, 0, rowHeights, 0, l);
+
+        // Sanity check: If the preferred height exceeded the available rows,
+        // make sure that the result equals the available rows
+        boolean doSanityCheck = true;
+        if(doSanityCheck) {
+        	if(result > availableRows) {
+        		throw new RuntimeException("Result rows exceeded available rows");
+        	}
+        	
+        	if(totalHeight >= availableRows) {
+        		if(result != availableRows) {
+        			throw new RuntimeException("Lost some rows: Only " + result + "/" + availableRows + " rows used, although " + totalHeight + " requested");
+        		}
+        	}
+        }
+        
+        return totalHeight;
+    }
+    
+
+    // Original strategy
+    public int shrinkHeightToFitAreaOrig(TerminalSize area, int[] rowHeights) {
         int totalHeight = 0;
         for(int height: rowHeights) {
             totalHeight += height;

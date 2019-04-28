@@ -266,9 +266,11 @@ public class CheckBoxList<V> extends AbstractListBox<V, CheckBoxList<V>> {
                 graphics.putString(0, 0, brackets);
             }
 
-            String text = (item != null ? item : "<null>").toString();
-            graphics.putString(4, 0, text);
-
+            //String text = (item != null ? item : "<null>").toString();
+            //graphics.putString(4, 0, text);
+            String text = item == null ? "<null>" : getLabel(listBox, index, item);
+            graphics.putString(0, 0, text);
+            
             boolean itemChecked = listBox.isChecked(index);
             char marker = themeDefinition.getCharacter("MARKER", 'x');
             if(themeDefinition.getBooleanProperty("MARKER_WITH_NORMAL", false)) {
