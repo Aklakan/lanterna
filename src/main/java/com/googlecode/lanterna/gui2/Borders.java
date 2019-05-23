@@ -151,8 +151,8 @@ public class Borders {
         return new DoubleLine(title, BorderStyle.ReverseBevel);
     }
 
-    private static abstract class StandardBorder extends AbstractBorder {
-        private final String title;
+    public static abstract class StandardBorder extends AbstractBorder {
+        private String title;
         protected final BorderStyle borderStyle;
 
         protected StandardBorder(String title, BorderStyle borderStyle) {
@@ -160,6 +160,10 @@ public class Borders {
                 throw new IllegalArgumentException("Cannot create a border with null title");
             }
             this.borderStyle = borderStyle;
+            this.title = title;
+        }
+
+        public void setTitle(String title) {
             this.title = title;
         }
 
